@@ -12,7 +12,10 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>additional.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
+      <itemPath>mcp3008Spi.cpp</itemPath>
+      <itemPath>mcp3008Spi.h</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -41,7 +44,13 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="additional.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="mcp3008Spi.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="mcp3008Spi.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
     <conf name="Release" type="1">
@@ -64,7 +73,13 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <item path="additional.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="mcp3008Spi.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="mcp3008Spi.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
   </confs>
