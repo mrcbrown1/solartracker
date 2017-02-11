@@ -36,7 +36,9 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/main.o \
-	${OBJECTDIR}/mcp3008Spi.o
+	${OBJECTDIR}/mcp3008.o \
+	${OBJECTDIR}/mcp3008Spi.o \
+	${OBJECTDIR}/motor.o
 
 
 # C Compiler Flags
@@ -68,10 +70,20 @@ ${OBJECTDIR}/main.o: main.cpp
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/main.o main.cpp
 
+${OBJECTDIR}/mcp3008.o: mcp3008.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/mcp3008.o mcp3008.cpp
+
 ${OBJECTDIR}/mcp3008Spi.o: mcp3008Spi.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/mcp3008Spi.o mcp3008Spi.cpp
+
+${OBJECTDIR}/motor.o: motor.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/motor.o motor.cpp
 
 # Subprojects
 .build-subprojects:
