@@ -19,7 +19,7 @@ extern mcp3008Spi a2d;
 returnVars mcp3008::measureSensor()
 {
 	returnVars data;
-	for (int i = 0; i <= 1; i++)
+	for (int i = 0; i <= 7; i++)
 	{
 		data.L0[i] = measureInput(i);
 //		std::cout << "Testing ADC channel: " << i << " | Value returned is: " << data.L0[i] << std::endl; // This is for debugging only

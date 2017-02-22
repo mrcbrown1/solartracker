@@ -37,8 +37,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 OBJECTFILES= \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/mcp3008.o \
-	${OBJECTDIR}/mcp3008Spi.o \
-	${OBJECTDIR}/motor.o
+	${OBJECTDIR}/mcp3008Spi.o
 
 
 # C Compiler Flags
@@ -55,7 +54,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-l bcm2835
+LDLIBSOPTIONS=-lbcm2835
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
@@ -79,11 +78,6 @@ ${OBJECTDIR}/mcp3008Spi.o: mcp3008Spi.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/mcp3008Spi.o mcp3008Spi.cpp
-
-${OBJECTDIR}/motor.o: motor.cpp
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} "$@.d"
-	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/motor.o motor.cpp
 
 # Subprojects
 .build-subprojects:

@@ -6,7 +6,6 @@
                    projectFiles="true">
       <itemPath>mcp3008.h</itemPath>
       <itemPath>mcp3008Spi.h</itemPath>
-      <itemPath>motor.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -18,7 +17,6 @@
       <itemPath>main.cpp</itemPath>
       <itemPath>mcp3008.cpp</itemPath>
       <itemPath>mcp3008Spi.cpp</itemPath>
-      <itemPath>motor.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -43,7 +41,7 @@
       <compileType>
         <linkerTool>
           <linkerLibItems>
-            <linkerOptionItem>-l bcm2835</linkerOptionItem>
+            <linkerOptionItem>-lbcm2835</linkerOptionItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>
@@ -56,10 +54,6 @@
       <item path="mcp3008Spi.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="mcp3008Spi.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="motor.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="motor.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
     <conf name="Release" type="1">
@@ -91,10 +85,6 @@
       <item path="mcp3008Spi.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="mcp3008Spi.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="motor.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="motor.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
   </confs>

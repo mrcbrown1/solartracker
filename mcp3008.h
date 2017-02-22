@@ -18,7 +18,7 @@
 // Remember to alter the main reading part of script if adding more inputs
 
 struct returnVars {
-	int L0[2];
+	int L0[8];
 };
 
 class mcp3008

@@ -2,6 +2,8 @@
 using namespace std;
 
 /**********************************************************
+ * Code obtained from https://github.com/halherta/RaspberryPi-mcp3008Spi
+ * 
  * spiOpen() :function is called by the constructor.
  * It is responsible for opening the spidev device
  * "devspi" and then setting up the spidev interface.
