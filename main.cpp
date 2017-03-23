@@ -3,12 +3,11 @@
 #include <stdio.h>
 #include <bcm2835.h>
 #include "mcp3008.h"
-#include "motor.h"
 
 
 using namespace std;
 
-#define MOTORFORWARDPIN RPI_V2_GPIO_P1_32
+#define MOTORFORWARDPIN RPI_V2_GPIO_P1_33
 #define MOTORREVERSEPIN RPI_GPIO_P1_12
 #define FWD_PWM_CHANNEL 1
 #define REV_PWM_CHANNEL 0
@@ -72,8 +71,8 @@ int main()
 	//--------------SETUP HERE----------------//
 
 	bcm2835_gpio_fsel(MOTORFORWARDPIN, BCM2835_GPIO_FSEL_ALT0); // Make forward and reverse pins connected to respective PWM clocks.
-//	bcm2835_gpio_fsel(MOTORREVERSEPIN, BCM2835_GPIO_FSEL_ALT5); // ALT5 is PWM channel 0, and ALT0 is PWM channel 1
-	bcm2835_pwm_set_clock(BCM2835_PWM_CLOCK_DIVIDER_2048); //Set clock divider : 1,2,4,8,16,32,64,128,256,512,1024,2048
+	bcm2835_gpio_fsel(MOTORREVERSEPIN, BCM2835_GPIO_FSEL_ALT5); // ALT5 is PWM channel 0, and ALT0 is PWM channel 1
+	bcm2835_pwm_set_clock(BCM2835_PWM_CLOCK_DIVIDER_256); //Set clock divider : 1,2,4,8,16,32,64,128,256,512,1024,2048
 
 	bcm2835_pwm_set_mode(FWD_PWM_CHANNEL, 1, 1); // Set mode and range for both forward and reverse channels
 	bcm2835_pwm_set_range(FWD_PWM_CHANNEL, RANGE); // Format is (channel, mode, enabled) mode 1 = mark-space, 2 = balanced
@@ -84,38 +83,47 @@ int main()
 	bcm2835_pwm_set_data(REV_PWM_CHANNEL, 0); // Reset PWM channel to zero incase there was leftover data
 
 
-
-
 	//---------------START OF MAIN LOOP---------//
 
-		int i = 0;
+	int i = 0;
 		while (true)
 		{
 			returnData = myADC.measureSensor(); // Grab the current ADC measurements
-			fwsp = returnData.L0[3]; // Potentiometers are connected to pins 4 & 5 of the ADC (logical 3 and 4)
-			rvsp = returnData.L0[4];
-	
+			fwsp = returnData.L0[0]; // Potentiometers are connected to pins 1 & 2 of the ADC (logical 0 and 1)
+			rvsp = returnData.L0[1];
+			bcm2835_pwm_set_data(REV_PWM_CHANNEL, 0);
+			bcm2835_pwm_set_data(FWD_PWM_CHANNEL, 0);
 			if (fwsp >= 30)
 			{
-	//			motorForward();
+				//			motorForward();
 				bcm2835_pwm_set_data(FWD_PWM_CHANNEL, fwsp);
+				if (i % 800 == 0) // Let's give diagnostics.
+				{
+					cout << string(100, '\n') << "Forward: " << fwsp << " | Reverse: " << rvsp << endl;
+					i = 0;
+				}
+				i++;
 			}
 	
-			if(rvsp >= 30)
+			if (rvsp >= 30)
 			{
-	//			motorReverse();
+				//			motorReverse();
 				bcm2835_pwm_set_data(REV_PWM_CHANNEL, rvsp);
+				if (i % 800 == 0) // Let's give diagnostics.
+				{
+					cout << string(100, '\n') << "Forward: " << fwsp << " | Reverse: " << rvsp << endl;
+					i = 0;
+				}
+				i++;
 			}
-			if (i % 1000 == 0) // Let's give diagnostics.
+			if (i % 800 == 0) // Let's give diagnostics.
 			{
-				cout << string(100, '\n') << "The sensor values are; Forward: " << fwsp << " | Reverse: " << rvsp << endl;
+				cout << string(100, '\n') << "Forward: " << fwsp << " | Reverse: " << rvsp << endl;
 				i = 0;
 			}
 			i++;
-	
 		}
-		
-
+	delayMicroseconds(1000);
 	return 0;
 }
 
