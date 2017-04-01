@@ -29,7 +29,9 @@ time_t now = time(0); // New time object to hold the current time
 const int tstart = time(0); // When the program was started, for logging purposes
 int tlast = tstart; // This is a counter to slow logging down to n seconds between logs
 int upperhit, lowerhit; // Variables to hold whether the limit of travel has been reached
-int direction = 0; // 0 = forward, 1 = reverse
+
+int direction = 1; // 1 = forward, -1 = reverse
+bool directionlogic = true; // true = fwd, false = rev
 
 int bufcount = 0; // index for circular buffer
 #define bufsize 10 // number of previous readings to store
@@ -47,7 +49,10 @@ int lightlevel = 0;
 int i_meas = 0; // int to hold the measured current from the ADC 0-1024
 float i_pred = 0; // float to hold decimal approximation of the current
 
-int v_last[4] = {0};
+#define scantime 6
+#define movetime 6
+
+int v_last[100] = {0};
 
 // This is where the log should be saved, accessible by the webserver
 const string PATHTOLOG = "/var/www/html/datafiles/";
@@ -64,7 +69,7 @@ mcp3008Spi a2d("/dev/spidev0.0", SPI_MODE_0, 1000000, 8); // Making a global ins
  Functions start here
  */
 
-float averageArray(int *inputs, int n) // This function will return the floating point average of an array of integers
+int averageArray(int *inputs, int n) // This function will return the floating point average of an array of integers
 {
 	//	int n = sizeof (inputs);
 	float sum = 0;
@@ -80,7 +85,7 @@ float averageArray(int *inputs, int n) // This function will return the floating
 	}
 	float average = sum / count;
 	//		cout << "Sum: " << sum << " | Count: " << n << " | Average: " << average << endl;
-	return average;
+	return (int) average;
 }
 
 static void checkLogfile()
@@ -133,7 +138,8 @@ static void logData(int voltage, int current, int light) // This function append
 
 		string path = PATHTOLOG + "data.csv";
 		ofstream file(path, std::ios::app); //open in constructor, make sure we append data
-		file << now - tstart << "," << voltage << "," << current << endl; // Echo in the correct data, return to main loop, destructor auto called
+		file << now - tstart << "," << voltage << "," << current << "," << light << endl; // Echo in the correct data, return to main loop, destructor auto called
+//		cout << "Data Logged: V = " << voltage << endl;
 	}
 }
 
@@ -161,32 +167,62 @@ static void checkLimits()
 static void initialScan()
 {
 	int thisstart = time(0);
-	while (now - thisstart <= 9)
-	{
-		bcm2835_pwm_set_data(FWD_PWM_CHANNEL, 256);
+	bcm2835_pwm_set_data(FWD_PWM_CHANNEL, 256);
 
+	while (now - thisstart <= scantime)
+	{
 		now = time(0); // Get current time
 
 		returnData = myADC.measureSensor(); // Grab the current ADC measurements
-		checkLimits();
 
-//		lightlevel = returnData.L0[0];
-		v_meas = returnData.L0[1];
-
+		v_meas = returnData.L0[0];
 
 		voltbuffer[bufcount] = v_meas;
-//		lightbuffer[bufcount] = lightlevel;
-
 
 		bufcount++;
 		if (bufcount == (bufsize))
 		{
 			bufcount = 0;
 		}
-		
-		v_last[now - tstart] = (int) averageArray(voltbuffer, bufsize);
+
+		v_last[now - thisstart] = averageArray(voltbuffer, bufsize);
+		v_meas = averageArray(voltbuffer, bufsize);
+		logData(v_meas, direction, 0);
 	}
+
 	bcm2835_pwm_set_data(FWD_PWM_CHANNEL, 0);
+}
+
+static void moveMotor(int currentMotorChan)
+{
+	if (direction = 0)
+		return;
+	
+	int thisstart = time(0);
+	bcm2835_pwm_set_data(currentMotorChan, 384);
+	
+	while (now - thisstart <= movetime)
+	{
+		now = time(0); // Get current time
+
+		returnData = myADC.measureSensor(); // Grab the current ADC measurements
+
+		v_meas = returnData.L0[0];
+
+		voltbuffer[bufcount] = v_meas;
+
+		bufcount++;
+		if (bufcount == (bufsize))
+		{
+			bufcount = 0;
+		}
+
+		v_last[now - thisstart] = averageArray(voltbuffer, bufsize);
+		v_meas = averageArray(voltbuffer, bufsize);
+		logData(v_meas, direction, 0);
+	}
+	
+	bcm2835_pwm_set_data(currentMotorChan, 0);
 }
 
 int main()
@@ -194,6 +230,7 @@ int main()
 	if (!bcm2835_init()) // Exit if BCM2835 isn't initialised
 		return 1;
 	cout << "BCM2835 Initialised!" << endl;
+	cout << "Direction is : " << directionlogic << endl;
 	//--------------SETUP PWM HERE----------------//
 
 	bcm2835_gpio_fsel(MOTORFORWARDPIN, BCM2835_GPIO_FSEL_ALT0); // Make forward and reverse pins connected to respective PWM clocks.
@@ -218,81 +255,73 @@ int main()
 
 	bcm2835_pwm_set_data(FWD_PWM_CHANNEL, 0);
 
+	int currentMotorChan = FWD_PWM_CHANNEL;
+
 	int detecting = 1;
 	cout << "System will attempt to move now" << endl;
-	cout << "Entering initial loop" << endl;
+	cout << "Beginning initial scan..." << endl;
 	while (detecting)
 	{
 		initialScan();
 
-		if ((int) averageArray(voltbuffer, bufsize) < v_last[1]) // If light is lower, go the in reverse
+		if ((averageArray(voltbuffer, bufsize) < v_last[0]) && (abs(averageArray(voltbuffer, bufsize) - v_last[0]) > 4)) // If light is lower, go the in reverse
 		{
-			cout << "I was moving in direction " << direction;
-			direction = 1;
-			cout << ", I am now moving in direction " << direction << endl;
-		} else if ((int) averageArray(voltbuffer, bufsize) > v_last[1]) // If light is higher, keep going
-		{
-			cout << "I was moving in direction " << direction;
+			direction = -direction;
+			directionlogic = !directionlogic;
 			detecting = 0;
-			cout << ", I am now moving in direction " << direction << endl;
+		} else if ((averageArray(voltbuffer, bufsize) > v_last[0]) && (abs(averageArray(voltbuffer, bufsize) - v_last[0]) > 4)) // If light is higher, keep going
+		{
+			detecting = 0;
 		}
 	}
-	cout << "Exited initial loop" << endl;
+	int lastpaused = 0;
+	
+	cout << "Initial scan finished!" << endl;
+	
+	while (true)
+	{
+		//-------------------DATA EXTRACTION AND BUFFER ADMIN--------------------------//
 
-	cout << "Voltage at start of initialising was: " << to_string(v_last[1]) << ", voltage after was " << to_string(averageArray(voltbuffer, bufsize)) << endl;
+		if (directionlogic == true)
+		{
+			currentMotorChan = FWD_PWM_CHANNEL;
+		}
+		if (directionlogic == false)
+		{
+			currentMotorChan = REV_PWM_CHANNEL;
+		}
+
+		now = time(0); // Get current time
+
+		returnData = myADC.measureSensor(); // Grab the current ADC measurements
+		checkLimits();
+
+		v_meas = returnData.L0[0];
+
+		voltbuffer[bufcount] = v_meas;
+
+		bufcount++;
+		if (bufcount == (bufsize))
+		{
+			bufcount = 0;
+		}
+
+		//--------------------------------------------------------------------//
+
+		moveMotor(currentMotorChan);
+
+		if ((v_meas < v_last[1]) && (abs(v_meas - v_last[1]) > 4)) // If light is lower, go the in reverse
+		{
+			cout << "\n\nDirection is currently: " << directionlogic << endl;
+			direction = -direction;
+			directionlogic = !directionlogic;
+			cout << "Direction changed to: " << directionlogic << endl;
+		}
+
+		v_pred = v_meas * 3.3 * 0.005 * 1.22850123; // multiply by 3.3 and by 0.005 to convert to panel volts, last number is correction for error
+		logData(v_meas, direction, 0);
+	}
+
 	return 0;
-
-//	while (true)
-//	{
-//		//-------------------DATA EXTRACTION AND BUFFER ADMIN--------------------------//
-//
-//		now = time(0); // Get current time
-//
-//		returnData = myADC.measureSensor(); // Grab the current ADC measurements
-//		checkLimits();
-//
-//		lightlevel = returnData.L0[0];
-//		v_meas = returnData.L0[1];
-//		rvsp = returnData.L0[0];
-//
-//		voltbuffer[bufcount] = v_meas;
-//		lightbuffer[bufcount] = lightlevel;
-//
-//
-//		bufcount++;
-//		if (bufcount == (bufsize))
-//		{
-//			bufcount = 0;
-//		}
-//
-//		//--------------------------------------------------------------------//
-//
-//
-//		if (rvsp >= 30)
-//		{
-//			//			rvsp = (int)averageArray(voltbuffer, bufsize);
-//			bcm2835_pwm_set_data(FWD_PWM_CHANNEL, rvsp);
-//			bcm2835_pwm_set_data(REV_PWM_CHANNEL, rvsp);
-//		}
-//		if (rvsp < 30)
-//		{
-//			bcm2835_pwm_set_data(FWD_PWM_CHANNEL, 0);
-//			bcm2835_pwm_set_data(REV_PWM_CHANNEL, 0);
-//		}
-//
-//
-//
-//		v_meas = averageArray(voltbuffer, bufsize);
-//		lightlevel = averageArray(lightbuffer, bufsize);
-//		i_meas = averageArray(ampbuffer, bufsize);
-//
-//		v_pred = v_meas * 3.3 * 0.005 * 1.22850123; // multiply by 3.3 and by 0.005 to convert to panel volts, last number is correction for error
-//		i_pred = i_meas;
-//		//		logData(v_pred, i_pred, lightlevel);
-//		cout << rvsp << endl;
-//		delayMicroseconds(100000);
-//	}
-//
-//	return 0;
 }
 
